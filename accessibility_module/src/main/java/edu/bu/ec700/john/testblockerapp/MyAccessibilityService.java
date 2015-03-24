@@ -1,7 +1,6 @@
 package edu.bu.ec700.john.testblockerapp;
 
 import android.accessibilityservice.AccessibilityService;
-import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
@@ -63,15 +62,22 @@ public class MyAccessibilityService extends AccessibilityService {
                 if (overlayView == null) {
                     overlayView = new SampleOverlayView(this);
                 }
-                AccessibilityNodeInfo source = event.getSource();
-                if (source == null) {
-                    Log.v(TAG, "null reached");
+                AccessibilityNodeInfo node = event.getSource();
+                if (node == null) {
                     return;
+
                 }
                 Log.v(TAG, "null passed");
-                source.setText(getEventText(event).replaceAll("secret", "******"));
+                node.setText(getEventText(event).replaceAll("secret", "******"));
             }
 
+
+        }
+        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            AccessibilityNodeInfo node = event.getSource();
+            if (node == null) {
+                return;
+            }
         }
     }
 
@@ -86,17 +92,11 @@ public class MyAccessibilityService extends AccessibilityService {
         Toast.makeText(this, "Service Connected", Toast.LENGTH_LONG).show();
         super.onServiceConnected();
         Log.v(TAG, "onServiceConnected");
-        AccessibilityServiceInfo info = new AccessibilityServiceInfo();
-        info.flags = AccessibilityServiceInfo.DEFAULT;
-        info.eventTypes = AccessibilityEvent.TYPES_ALL_MASK;
-        info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
-        setServiceInfo(info);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // The service is starting, due to a call to startService()
-        Log.v(TAG, "gogoeggrolls");
         Toast.makeText(this, " Service Started", Toast.LENGTH_LONG).show();
         return START_STICKY;
         // For time consuming an long tasks you can launch a new thread here...
