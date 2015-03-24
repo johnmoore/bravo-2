@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -56,19 +57,27 @@ public class MyAccessibilityService extends AccessibilityService {
                 getEventType(event), event.getClassName(), event.getPackageName(),
                 event.getEventTime(), getEventText(event)));
         if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED || event.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED) {
+            AccessibilityNodeInfo node = event.getSource();
+            if (node == null) {
+                return;
+
+            }
+            Log.v(TAG, "null passed1");
             if (getEventText(event).contains("secret")) {
                 Toast.makeText(this, "Not allowed!", Toast.LENGTH_LONG).show();
                 Log.v(TAG, getEventText(event).replaceAll("secret", "******"));
                 if (overlayView == null) {
-                    overlayView = new SampleOverlayView(this);
+                //    overlayView = new SampleOverlayView(this);
                 }
-                AccessibilityNodeInfo node = event.getSource();
-                if (node == null) {
+                AccessibilityNodeInfo node2 = event.getSource();
+                if (node2 == null) {
                     return;
 
                 }
-                Log.v(TAG, "null passed");
-                node.setText(getEventText(event).replaceAll("secret", "******"));
+                Log.v(TAG, "null passed2");
+                Bundle b = new Bundle();
+                b.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, getEventText(event).replaceAll("secret", "******"));
+                node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, b);
             }
 
 
@@ -78,6 +87,7 @@ public class MyAccessibilityService extends AccessibilityService {
             if (node == null) {
                 return;
             }
+            Log.v(TAG, "null passed!");
         }
     }
 
@@ -97,7 +107,7 @@ public class MyAccessibilityService extends AccessibilityService {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // The service is starting, due to a call to startService()
-        Toast.makeText(this, " Service Started", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Service Started!", Toast.LENGTH_LONG).show();
         return START_STICKY;
         // For time consuming an long tasks you can launch a new thread here...
 
