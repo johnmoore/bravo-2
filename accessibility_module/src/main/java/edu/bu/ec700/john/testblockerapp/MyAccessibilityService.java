@@ -39,7 +39,7 @@ public class MyAccessibilityService extends AccessibilityService {
             case AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED:
                 return "TYPE_VIEW_TEXT_CHANGED";
         }
-        return new Integer(event.getEventType()).toString();
+        return "none"; //new Integer(event.getEventType()).toString();
     }
 
     private String getEventText(AccessibilityEvent event) {
@@ -52,6 +52,9 @@ public class MyAccessibilityService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+        if (getEventType(event).compareTo("none") == 0) {
+            return;
+        }
         Log.v(TAG, String.format(
                 "onAccessibilityEvent: [type] %s [class] %s [package] %s [time] %s [text] %s",
                 getEventType(event), event.getClassName(), event.getPackageName(),
@@ -62,22 +65,22 @@ public class MyAccessibilityService extends AccessibilityService {
                 return;
 
             }
-            Log.v(TAG, "null passed1");
-            if (getEventText(event).contains("secret")) {
+            //Log.v(TAG, "null passed1");
+            if (getEventText(event).toLowerCase().contains("@personal.me")) {
                 Toast.makeText(this, "Not allowed!", Toast.LENGTH_LONG).show();
-                Log.v(TAG, getEventText(event).replaceAll("secret", "******"));
+                Log.v(TAG, getEventText(event).replaceAll("(?i)secret", "******"));
                 if (overlayView == null) {
-                //    overlayView = new SampleOverlayView(this);
+                    overlayView = new SampleOverlayView(this);
                 }
                 AccessibilityNodeInfo node2 = event.getSource();
                 if (node2 == null) {
                     return;
 
                 }
-                Log.v(TAG, "null passed2");
+                //Log.v(TAG, "null passed2");
                 Bundle b = new Bundle();
-                b.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, getEventText(event).replaceAll("secret", "******"));
-                node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, b);
+                b.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, getEventText(event).replaceAll("(?i)secret", "******"));
+                //node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, b);
             }
 
 
@@ -87,7 +90,7 @@ public class MyAccessibilityService extends AccessibilityService {
             if (node == null) {
                 return;
             }
-            Log.v(TAG, "null passed!");
+            //Log.v(TAG, "null passed!");
         }
     }
 
@@ -166,8 +169,9 @@ abstract class OverlayView extends RelativeLayout {
                 WindowManager.LayoutParams.TYPE_PHONE, WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
                 | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
 
-        layoutParams.gravity = getLayoutGravity();
-
+        layoutParams.gravity = Gravity.NO_GRAVITY;
+        layoutParams.x = 270;
+        layoutParams.y = 660;
         onSetupLayoutParams();
 
     }
@@ -386,27 +390,27 @@ class SampleOverlayView extends OverlayView {
 
     @Override
     protected void refreshViews() {
-        info.setText("WAITING\nWAITING");
+        info.setText("TRY ME");
     }
 
     @Override
     protected void onTouchEvent_Up(MotionEvent event) {
-        info.setText("UP\nPOINTERS: " + event.getPointerCount());
+        info.setText("TRY ME");
     }
 
     @Override
     protected void onTouchEvent_Move(MotionEvent event) {
-        info.setText("MOVE\nPOINTERS: " + event.getPointerCount());
+        //info.setText("MOVE\nPOINTERS: " + event.getPointerCount());
     }
 
     @Override
     protected void onTouchEvent_Press(MotionEvent event) {
-        info.setText("DOWN\nPOINTERS: " + event.getPointerCount());
+        info.setText("NOPE!!!");
     }
 
     @Override
     public boolean onTouchEvent_LongPress() {
-        info.setText("LONG\nPRESS");
+        //info.setText("LONG\nPRESS");
 
         return true;
     }
