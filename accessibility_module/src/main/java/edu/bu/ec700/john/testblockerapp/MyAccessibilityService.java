@@ -1,26 +1,39 @@
 package edu.bu.ec700.john.testblockerapp;
 
 import android.accessibilityservice.AccessibilityService;
+import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningTaskInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
+import android.view.accessibility.AccessibilityWindowInfo;
+import android.widget.AbsoluteLayout;
+
 import android.widget.Toast;
+
+import java.util.List;
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
+
 
 public class MyAccessibilityService extends AccessibilityService {
 
     static final String TAG = "MyAccessibilityService";
-    private SampleOverlayView overlayView;
+    private OverlayView overlayView;
+    boolean triggered = false;
+    HashMap<Integer, OverlayView> overlays = new HashMap<>();
 
     private String getEventType(AccessibilityEvent event) {
         switch (event.getEventType()) {
@@ -38,8 +51,10 @@ public class MyAccessibilityService extends AccessibilityService {
                 return "TYPE_WINDOW_STATE_CHANGED";
             case AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED:
                 return "TYPE_VIEW_TEXT_CHANGED";
+            case AccessibilityEvent.TYPE_WINDOWS_CHANGED:
+                return "TYPE_WINDOWS_CHANGED";
         }
-        return "none"; //new Integer(event.getEventType()).toString();
+        return new Integer(event.getEventType()).toString();
     }
 
     private String getEventText(AccessibilityEvent event) {
@@ -52,9 +67,26 @@ public class MyAccessibilityService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (getEventType(event).compareTo("none") == 0) {
-            return;
+        ArrayList<Integer> outs = new ArrayList<>();
+        List<AccessibilityWindowInfo> ws = getWindows();
+        Log.v(TAG, new Integer(ws.size()).toString() + " windows");
+        for (AccessibilityWindowInfo w : ws) {
+            Log.v(TAG, w.getClass().toString());
+            WalkNode(w.getRoot(), outs);
         }
+        Iterator it = overlays.entrySet().iterator();
+        ArrayList<Integer> toremove = new ArrayList<>();
+        while (it.hasNext()) {
+            Map.Entry pair = (Map.Entry) it.next();
+            if (!outs.contains(pair.getKey())) {
+                overlays.get(pair.getKey()).destory();
+                toremove.add((Integer)pair.getKey());
+            }
+        }
+        for (Integer i : toremove) {
+            overlays.remove(i);
+        }
+
         Log.v(TAG, String.format(
                 "onAccessibilityEvent: [type] %s [class] %s [package] %s [time] %s [text] %s",
                 getEventType(event), event.getClassName(), event.getPackageName(),
@@ -66,12 +98,10 @@ public class MyAccessibilityService extends AccessibilityService {
 
             }
             //Log.v(TAG, "null passed1");
-            if (getEventText(event).toLowerCase().contains("@personal.me")) {
+            if (getEventText(event).toLowerCase().contains("gogoeggrolls")) {
                 Toast.makeText(this, "Not allowed!", Toast.LENGTH_LONG).show();
                 Log.v(TAG, getEventText(event).replaceAll("(?i)secret", "******"));
-                if (overlayView == null) {
-                    overlayView = new SampleOverlayView(this);
-                }
+
                 AccessibilityNodeInfo node2 = event.getSource();
                 if (node2 == null) {
                     return;
@@ -81,16 +111,83 @@ public class MyAccessibilityService extends AccessibilityService {
                 Bundle b = new Bundle();
                 b.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, getEventText(event).replaceAll("(?i)secret", "******"));
                 //node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, b);
+                Rect outbounds = new Rect();
+                node.getBoundsInScreen(outbounds);
+                Log.v(TAG, new Integer(outbounds.left).toString());
+                Log.v(TAG, new Integer(outbounds.top).toString());
+                if (overlayView == null) {
+                    overlayView = new OverlayView(this, outbounds);
+                }
+
+
             }
 
 
         }
         if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            AccessibilityNodeInfo node = event.getSource();
+            if (overlayView != null) {
+                overlayView.destory();
+                overlayView = null;
+            }
+
+
+        }
+
+        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
+/*
+            AccessibilityWindowInfo node = event.getSource().getWindow();
             if (node == null) {
                 return;
             }
+
+
+*/
+
             //Log.v(TAG, "null passed!");
+        }
+        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+
+            AccessibilityNodeInfo n = event.getSource();
+            if (n == null) {
+                return;
+            }
+            //WalkNode(n);
+        }
+    }
+
+    private void WalkNode(AccessibilityNodeInfo root, ArrayList<Integer> outs) {
+        if (root == null) {
+            return;
+        }
+        if (root.getText() != null) {
+            Log.v(TAG, root.getText().toString());
+            if (root.getText().toString().toLowerCase().contains("secret")) {
+                Rect outbounds = new Rect();
+                root.getBoundsInScreen(outbounds);
+                if (overlays.containsKey(root.hashCode())) {
+
+                    Rect b = overlays.get(root.hashCode()).getbounds();
+                    if (!b.equals(outbounds)) {
+                        OverlayView old = overlays.get(root.hashCode());
+                        overlays.put(root.hashCode(), new OverlayView(this, outbounds));
+                        old.destory();
+
+                    }
+
+                } else {
+                    overlays.put(root.hashCode(), new OverlayView(this, outbounds));
+                }
+                outs.add(root.hashCode());
+
+
+            }
+        }
+
+        int i = 0;
+        while (i < root.getChildCount()) {
+            AccessibilityNodeInfo child = root.getChild(i);
+            WalkNode(child, outs);
+            i = i + 1;
         }
     }
 
@@ -131,54 +228,43 @@ public class MyAccessibilityService extends AccessibilityService {
 
 }
 
-abstract class OverlayView extends RelativeLayout {
+
+class OverlayView extends AbsoluteLayout {
 
     protected WindowManager.LayoutParams layoutParams;
 
-    private int layoutResId;
-    private int notificationId = 0;
+    private Rect bounds;
 
-    public OverlayView(MyAccessibilityService service, int layoutResId, int notificationId) {
+    public Rect getbounds() {
+        return bounds;
+    }
+    public OverlayView(MyAccessibilityService service, Rect bounds) {
         super(service);
 
-        this.layoutResId = layoutResId;
-        this.notificationId = notificationId;
-
-        this.setLongClickable(true);
-
-        this.setOnLongClickListener(new View.OnLongClickListener() {
-
-            @Override
-            public boolean onLongClick(View v) {
-                return onTouchEvent_LongPress();
-            }
-        });
+        this.bounds = bounds;
 
         load();
     }
 
+    public int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
 
-    public int getLayoutGravity() {
-        // Override this to set a custom Gravity for the view.
+    public void updatebounds(Rect bounds) {
+        Log.v("MyAccessibilityService", "updating bounds");
 
-        return Gravity.CENTER;
     }
 
     private void setupLayoutParams() {
-        layoutParams = new WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,
+        layoutParams = new WindowManager.LayoutParams(bounds.width(), bounds.height(), bounds.left, bounds.top-getStatusBarHeight(),
                 WindowManager.LayoutParams.TYPE_PHONE, WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
                 | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
-
-        layoutParams.gravity = Gravity.NO_GRAVITY;
-        layoutParams.x = 270;
-        layoutParams.y = 660;
-        onSetupLayoutParams();
-
-    }
-
-    protected void onSetupLayoutParams() {
-        // Override this to modify the initial LayoutParams. Be sure to call
-        // super.setupLayoutParams() first.
+        layoutParams.gravity = Gravity.TOP | Gravity.LEFT;
     }
 
     private void inflateView() {
@@ -187,102 +273,33 @@ abstract class OverlayView extends RelativeLayout {
 
         LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-        inflater.inflate(layoutResId, this);
-
-        onInflateView();
-
-    }
-
-    protected void onInflateView() {
-        // Override this to make calls to findViewById() to setup references to
-        // the views that were inflated.
-        // This is called automatically when the object is created right after
-        // the resource is inflated.
-    }
-
-    public boolean isVisible() {
-        // Override this method to control when the Overlay is visible without
-        // destroying it.
-        return true;
-    }
-
-    public void refreshLayout() {
-        // Call this to force the updating of the view's layout.
-
-        if (isVisible()) {
-            removeAllViews();
-            inflateView();
-
-            onSetupLayoutParams();
-
-            ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE)).updateViewLayout(this, layoutParams);
-
-            refresh();
-        }
+        inflater.inflate(R.layout.overlay, this);
+        this.setBackgroundColor(0);
 
     }
 
     protected void addView() {
         setupLayoutParams();
 
-        ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE)).addView(this, layoutParams);
+
+        WindowManager windowManager = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
+        windowManager.addView(this, layoutParams);
 
         super.setVisibility(View.GONE);
+
     }
 
     protected void load() {
         inflateView();
         addView();
-        refresh();
-    }
+        setVisibility(View.VISIBLE);
 
-    protected void unload() {
-        ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE)).removeView(this);
-
-        removeAllViews();
-    }
-
-    protected void reload() {
-        unload();
-
-        load();
+        Log.v("MyAccessibilityService", new Integer(super.getLeft()).toString());
+        Log.v("MyAccessibilityService", new Integer(super.getTop()).toString());
     }
 
     public void destory() {
         ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE)).removeView(this);
-    }
-
-    public void refresh() {
-        // Call this to update the contents of the Overlay.
-
-        if (!isVisible()) {
-            setVisibility(View.GONE);
-        } else {
-            setVisibility(View.VISIBLE);
-
-            refreshViews();
-        }
-    }
-
-    protected void refreshViews() {
-        // Override this method to refresh the views inside of the Overlay. Only
-        // called when Overlay is visible.
-    }
-
-    protected boolean showNotificationHidden() {
-        // Override this to configure the notification to remain even when the
-        // overlay is invisible.
-        return true;
-    }
-
-    protected boolean onVisibilityToChange(int visibility) {
-        // Catch changes to the Overlay's visibility in order to animate
-
-        return true;
-    }
-
-    protected View animationView() {
-        return this;
     }
 
     protected void hide() {
@@ -294,125 +311,6 @@ abstract class OverlayView extends RelativeLayout {
         // Set visibility, but bypass onVisibilityToChange()
 
         super.setVisibility(View.VISIBLE);
-    }
-
-
-
-    protected int getLeftOnScreen() {
-        int[] location = new int[2];
-
-        getLocationOnScreen(location);
-
-        return location[0];
-    }
-
-    protected int getTopOnScreen() {
-        int[] location = new int[2];
-
-        getLocationOnScreen(location);
-
-        return location[1];
-    }
-
-    protected boolean isInside(View view, int x, int y) {
-        // Use this to test if the X, Y coordinates of the MotionEvent are
-        // inside of the View specified.
-
-        int[] location = new int[2];
-
-        view.getLocationOnScreen(location);
-
-        if (x >= location[0]) {
-            if (x <= location[0] + view.getWidth()) {
-                if (y >= location[1]) {
-                    if (y <= location[1] + view.getHeight()) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    protected void onTouchEvent_Up(MotionEvent event) {
-
-    }
-
-    protected void onTouchEvent_Move(MotionEvent event) {
-
-    }
-
-    protected void onTouchEvent_Press(MotionEvent event) {
-
-    }
-
-    public boolean onTouchEvent_LongPress()
-    {
-        return false;
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-
-        if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
-
-            onTouchEvent_Press(event);
-
-        } else if (event.getActionMasked() == MotionEvent.ACTION_UP) {
-
-            onTouchEvent_Up(event);
-
-        } else if (event.getActionMasked() == MotionEvent.ACTION_MOVE) {
-
-            onTouchEvent_Move(event);
-
-        }
-
-        return super.onTouchEvent(event);
-
-    }
-
-}
-class SampleOverlayView extends OverlayView {
-
-    private TextView info;
-
-
-    public SampleOverlayView(MyAccessibilityService service) {
-        super(service, R.layout.overlay, 1);
-    }
-
-    @Override
-    protected void onInflateView() {
-        info = (TextView) this.findViewById(R.id.textview_info);
-    }
-
-    @Override
-    protected void refreshViews() {
-        info.setText("TRY ME");
-    }
-
-    @Override
-    protected void onTouchEvent_Up(MotionEvent event) {
-        info.setText("TRY ME");
-    }
-
-    @Override
-    protected void onTouchEvent_Move(MotionEvent event) {
-        //info.setText("MOVE\nPOINTERS: " + event.getPointerCount());
-    }
-
-    @Override
-    protected void onTouchEvent_Press(MotionEvent event) {
-        info.setText("NOPE!!!");
-    }
-
-    @Override
-    public boolean onTouchEvent_LongPress() {
-        //info.setText("LONG\nPRESS");
-
-        return true;
     }
 
 
