@@ -14,7 +14,9 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        installModule();
+        //installModule();
+        Intent start_defense_service = new Intent(this, DefenseManagerService.class);
+        startService(start_defense_service);
     }
 
     public void installModule() {
