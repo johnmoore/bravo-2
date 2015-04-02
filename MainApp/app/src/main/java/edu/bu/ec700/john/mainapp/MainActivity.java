@@ -1,6 +1,7 @@
 package edu.bu.ec700.john.mainapp;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -18,11 +19,15 @@ public class MainActivity extends Activity {
 
     public void installModule() {
         try{
-            Process su = Runtime.getRuntime().exec("/system/xbin/su2 pm install -r /sdcard/app-release.apk");
-            su.waitFor();
-            su = Runtime.getRuntime().exec("/system/xbin/su2 am startservice -n edu.bu.ec700.john.obscuremodule/edu.bu.ec700.john.obscuremodule.OverlayService");
-            su.waitFor();
-
+            //Process su = Runtime.getRuntime().exec("/system/xbin/su2 pm install -r /sdcard/app-release.apk");
+            //su.waitFor();
+           // su = Runtime.getRuntime().exec("/system/xbin/su2 am startservice -n edu.bu.ec700.john.obscuremodule/edu.bu.ec700.john.obscuremodule.OverlayService");
+           // su.waitFor();
+            Intent intent = new Intent();
+            intent.setAction("edu.bu.ec700.john.action.obscuremodule");
+            intent.putExtra("type",1);
+            intent.putExtra("filterstring", "new filter string");
+            sendBroadcast(intent);
         }catch(Exception e){
             Log.v("app", "ERR:" + e.toString());
         }

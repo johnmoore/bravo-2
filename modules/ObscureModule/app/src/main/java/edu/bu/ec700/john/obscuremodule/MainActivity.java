@@ -16,6 +16,7 @@ public class MainActivity extends Activity {
 
         Intent start_overlay_service = new Intent(this, OverlayService.class);
         startService(start_overlay_service);
+
     }
 
 

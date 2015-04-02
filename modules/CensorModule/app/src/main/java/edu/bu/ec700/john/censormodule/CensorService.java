@@ -1,7 +1,9 @@
 package edu.bu.ec700.john.censormodule;
 
 import android.accessibilityservice.AccessibilityService;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
@@ -9,10 +11,16 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Toast;
 
 
-public class CensorService extends AccessibilityService {
+public class CensorService extends AccessibilityService implements BravoDefenseInterface {
 
     static final String TAG = "CensorModule";  // debug tag
     SensitiveInfoRecognizer recognizer = new SensitiveInfoRecognizer();
+    private boolean enabled = true;
+
+    public static final int ACTION_NEW_FILTER_STRING = 1;
+    public static final int ACTION_NEW_FILTER_PATTERN = 2;
+    public static final int ACTION_ENABLE = 3;
+    public static final int ACTION_DISABLE = 4;
 
     private String getEventText(AccessibilityEvent event) {
         StringBuilder sb = new StringBuilder();
@@ -24,6 +32,10 @@ public class CensorService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+        if (!enabled) {
+            return;
+        }
+
         if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED ||
                 event.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED) {
             AccessibilityNodeInfo node = event.getSource();
@@ -56,12 +68,29 @@ public class CensorService extends AccessibilityService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        IntentFilter intentFilter = new IntentFilter("edu.bu.ec700.john.action.obscuremodule");
+        BroadcastReceiver receiver = new Receiver(this);
+        this.registerReceiver(receiver , intentFilter);
+        Log.v(TAG, "connected");
+
         return START_STICKY;
     }
 
     @Override
     public void onInterrupt() {
 
+    }
+
+    @Override
+    public void enable() {
+        Log.v(TAG, "Enabling");
+        enabled = true;
+    }
+
+    @Override
+    public void disable() {
+        Log.v(TAG, "Disabling");
+        enabled = false;
     }
 
 }
