@@ -13,7 +13,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-
+// THe dialog to get user's response
+// Refuse defaultly after 10 seconds
 public class DialogActivity extends Activity {
     Button confirmButton;
     Button refuseButton;

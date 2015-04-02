@@ -29,9 +29,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.List;
 
+// Remote service that will handle introspy's request
+// using a tricky way--combination of handler, thread, variable--to block main thread
 public class RemoteService extends Service {
     private boolean blocking = false;
     private boolean result = true;
+
+    // the variables used in determine user's preferences
     private int type;
     private String packageName;
     private String dataDir;
@@ -64,6 +68,7 @@ public class RemoteService extends Service {
         }
     };
 
+    // The receiver needed to get the result of user's choice
     private final BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -85,6 +90,7 @@ public class RemoteService extends Service {
             writeToFile("detect background API call; ");
             return 0;
         }
+        // try to determine by preferences
         SharedPreferences sharedPref = getSharedPreferences(packageName + currentClassName + type, Context.MODE_PRIVATE);
         boolean hasRecord = sharedPref.getBoolean("hasRecord", false);
         if (hasRecord) {
@@ -99,6 +105,7 @@ public class RemoteService extends Service {
         return -1;
     }
 
+    // initial and record current states
     private void setCurrentState(int type, String packageName, String dataDir) {
         this.type = type;
         this.packageName = packageName;
@@ -110,6 +117,7 @@ public class RemoteService extends Service {
         writeToFile("type:"+type+", package name: "+packageName+", dataDir: "+dataDir+", currentClassName: "+currentClassName+", currentPackageName: "+currentPackageName+"\n");
     }
 
+
     private IBinder mBinder = new IRemoteService.Stub() {
 
         @Override
@@ -117,6 +125,7 @@ public class RemoteService extends Service {
             setCurrentState(type, packageName, dataDir);
             int ruleResult = askForRule();
             if (ruleResult < 0) {
+                // tricky way to block the main thread
                 blocking = true;
                 while (blocking) ;
             } else if (ruleResult == 0) {
@@ -144,6 +153,7 @@ public class RemoteService extends Service {
         return mBinder;
     }
 
+    // used as log function
     private void writeToFile(String data) {
         try {
             OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput("log.txt", Context.MODE_APPEND));
@@ -151,33 +161,6 @@ public class RemoteService extends Service {
             outputStreamWriter.close();
         } catch (IOException e) {
         }
-    }
-
-
-    private String readFromFile() {
-
-        String ret = "";
-
-        try {
-            InputStream inputStream = openFileInput("log.txt");
-
-            if (inputStream != null) {
-                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                String receiveString = "";
-                StringBuilder stringBuilder = new StringBuilder();
-
-                while ((receiveString = bufferedReader.readLine()) != null) {
-                    stringBuilder.append(receiveString);
-                }
-
-                inputStream.close();
-                ret = stringBuilder.toString();
-            }
-        } catch (IOException e) {
-        }
-
-        return ret;
     }
 
 }
