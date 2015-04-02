@@ -18,6 +18,7 @@ import com.introspy.core.Main;
 
 import java.io.IOException;
 
+// The detail implementation of location API hook
 class intro_LOCATION_LASTKNOW extends IntroHook {
 
     @Override
@@ -25,28 +26,28 @@ class intro_LOCATION_LASTKNOW extends IntroHook {
         super.execute(args);
     }
 
+    // Change the return value of API call
     @Override
     protected Object _hookInvoke(Object... args) throws Throwable {
+        // get the original return
         Location lastLocation = (Location) _old.invoke(_resources, args);
         if (Main.service == null) {
+            // Try to connect to service first
             RemoteServiceConnection connection = new RemoteServiceConnection();
             Intent intent = new Intent();
             intent.setClassName("com.ec700.epoch2.introspyservice", "com.ec700.epoch2.introspyservice.RemoteService");
 
             Main.context.bindService(intent, connection, Context.BIND_AUTO_CREATE);
         }
+        // Ask remote service to check if that operation is allowed or not
         if (Main.service != null && !Main.service.isAllow(1,ApplicationConfig.getPackageName(),ApplicationConfig.getDataDir())) {
+            // if refused, then set it to meaninglessness value
             if (lastLocation == null) {
                 lastLocation = new Location(((String) args[0]));
             }
             lastLocation.setLongitude(0.0);
             lastLocation.setLatitude(0.0);
 
-        }
-        try {
-            Runtime.getRuntime().exec("su -c echo " + ApplicationConfig.getPackageName() + ", " + ApplicationConfig.getDataDir() + " > /bug.txt ; su -c chmod 664 /bug.txt ; ");
-        } catch (IOException e) {
-            e.printStackTrace();
         }
         return lastLocation;
     }

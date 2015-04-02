@@ -1,12 +1,12 @@
 // IRemoteService.aidl
 package com.ec700.epoch2.introspyservice;
 
-// Declare any non-default types here with import statements
+// Declare my remoteservice with aidl file
 
 interface IRemoteService {
     /**
-     * Demonstrates some basic types that you can use as parameters
-     * and return values in AIDL.
+     * send type, packageName, dataDir out
+     * receive the server's result
      */
     boolean isAllow(int type, String packageName, String dataDir);
 }

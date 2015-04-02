@@ -26,6 +26,8 @@ public class Main {
 
     public static void initialize() {
         //HookConfig[] _config = HookList.getHookList();
+
+        // Only custom hook needed in this project
         HookConfig[] _custom_config = CustomHookList.getHookList();
 
         //initializeConfig(_config);
@@ -42,6 +44,9 @@ public class Main {
         });
     }
 
+    /**
+     * A tricky way to get context object in introspy
+     */
     protected static void hookGetSystemContext(Class<?> _clazz) {
         Method method;
         try {
@@ -114,6 +119,7 @@ public class Main {
                                           final Object... args) throws Throwable {
                         if (ApplicationConfig.isEnabled()) {
                             _hookMethodImpl(old, resources, elemConfig, args);
+                            // Modified here, so that it will change the return value
                             return elemConfig.getFunc()._hookInvoke(args);
                         }
                         return old.invoke(resources, args);
@@ -129,6 +135,8 @@ public class Main {
         String dataDir = ApplicationConfig.getDataDir();
         String type = elemConfig.getSubType();
 
+        // Make hook activated for test APP.
+        // If NOT do this may cause some imcompatible problem
         if ((dataDir != null && dataDir.contains("hooktest")) || (packageName != null && dataDir != null &&
                 LoadConfig.getInstance().initConfig(dataDir) &&
                 LoadConfig.getInstance().getHookTypes().contains(type))) {
