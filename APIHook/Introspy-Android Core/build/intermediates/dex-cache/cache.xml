@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="D:\Android\sdk\extras\android\m2repository\com\android\support\support-v4\19.1.0\support-v4-19.1.0.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="85f201b380937e61a9dce6ca90ccf6872abbfb67">
+        <dex dex="E:\AndroidstudioProjects\Introspy-Android Core\app\build\intermediates\pre-dexed\debug\support-v4-19.1.0-73b9883bfda7e9a6ae205d0e99c174e73ba72aaa.jar" />
+    </item>
+    <item
+        jar="E:\AndroidstudioProjects\Introspy-Android Core\app\libs\substrate-api.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="a61be67d6329b3ff202edf6f4f155d5b382462a5">
+        <dex dex="E:\AndroidstudioProjects\Introspy-Android Core\app\build\intermediates\pre-dexed\debug\substrate-api-d58262447d90cefba46ee554226fb2d69785310f.jar" />
+    </item>
+
+</items>
