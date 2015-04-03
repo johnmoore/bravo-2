@@ -1,8 +1,8 @@
-Exampe code for "How-To SU"
+Modified libsuperuser example
 
-For further details, see:
+Runs tcpdump as root to collect packets for upload to the server.
 
-[http://su.chainfire.eu/](http://su.chainfire.eu/)
+Designed to have no user interraction and run in the background on boot.
 
 ---
 
