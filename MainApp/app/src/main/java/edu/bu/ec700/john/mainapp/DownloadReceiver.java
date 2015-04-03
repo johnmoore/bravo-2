@@ -20,9 +20,10 @@ public class DownloadReceiver extends ResultReceiver {
             int progress = resultData.getInt("progress");
             String apkname = resultData.getString("apkname");
             String servicetostart = resultData.getString("servicetostart");
+            String config = resultData.getString("config");
             if (progress == 100) {
                 if (apkname != null) {
-                    owner.downloadDone(apkname, servicetostart);
+                    owner.downloadDone(apkname, servicetostart, config);
                 }
             }
         }

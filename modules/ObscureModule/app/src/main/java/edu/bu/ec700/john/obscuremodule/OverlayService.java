@@ -2,6 +2,7 @@ package edu.bu.ec700.john.obscuremodule;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Rect;
@@ -9,6 +10,7 @@ import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityWindowInfo;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -125,6 +127,12 @@ public class OverlayService extends AccessibilityService implements BravoDefense
         BroadcastReceiver receiver = new Receiver(this);
         this.registerReceiver(receiver , intentFilter);
         Log.v(TAG, "connected");
+        Context context = getApplicationContext();
+        CharSequence text = "Service Started!";
+        int duration = Toast.LENGTH_SHORT;
+
+        Toast toast = Toast.makeText(context, text, duration);
+        toast.show();
         return START_STICKY;
     }
 

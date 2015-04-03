@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
+// Cited: http://stackoverflow.com/questions/19304329/send-broadcast-from-one-apk-package-to-another-apk-package
 public class DownloadService extends IntentService {
     public static final int UPDATE_PROGRESS = 8344;
     public DownloadService() {
@@ -24,6 +25,7 @@ public class DownloadService extends IntentService {
         String urlToDownload = intent.getStringExtra("url");
         String apkname = intent.getStringExtra("apkname");
         String servicetostart = intent.getStringExtra("servicetostart");
+        String config = intent.getStringExtra("config");
         ResultReceiver receiver = (ResultReceiver) intent.getParcelableExtra("receiver");
         try {
             URL url = new URL(urlToDownload);
@@ -60,6 +62,7 @@ public class DownloadService extends IntentService {
         resultData.putInt("progress" ,100);
         resultData.putString("apkname" ,apkname);
         resultData.putString("servicetostart" ,servicetostart);
+        resultData.putString("config", config);
         Log.v("MainApp", "100%");
         receiver.send(UPDATE_PROGRESS, resultData);
     }

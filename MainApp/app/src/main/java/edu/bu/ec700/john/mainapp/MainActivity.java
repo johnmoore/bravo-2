@@ -3,7 +3,6 @@ package edu.bu.ec700.john.mainapp;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -14,27 +13,9 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //installModule();
         Intent start_defense_service = new Intent(this, DefenseManagerService.class);
         startService(start_defense_service);
     }
-
-    public void installModule() {
-        try{
-            //Process su = Runtime.getRuntime().exec("/system/xbin/su2 pm install -r /sdcard/app-release.apk");
-            //su.waitFor();
-           // su = Runtime.getRuntime().exec("/system/xbin/su2 am startservice -n edu.bu.ec700.john.obscuremodule/edu.bu.ec700.john.obscuremodule.OverlayService");
-           // su.waitFor();
-            Intent intent = new Intent();
-            intent.setAction("edu.bu.ec700.john.action.obscuremodule");
-            intent.putExtra("type",1);
-            intent.putExtra("filterstring", "new filter string");
-            sendBroadcast(intent);
-        }catch(Exception e){
-            Log.v("app", "ERR:" + e.toString());
-        }
-    }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
